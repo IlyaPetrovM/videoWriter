@@ -31,8 +31,13 @@ static void help()
 //  fourcc = CV_FOURCC('F', 'L', 'V', '1');
  // int fourcc = 0;
 
+
 int main(int argc, char *argv[])
 {
+    int64 now, then; 
+    double elapsed_msec, tickspermillisecond=cvGetTickFrequency() * 1.0e3; 
+
+    
     help();
     string source;
     VideoCapture capture;
@@ -51,6 +56,7 @@ int main(int argc, char *argv[])
     }else{
         capture.open(source);
     }
+
     if(capture.isOpened()){
         Size S = Size((int) capture.get(CV_CAP_PROP_FRAME_WIDTH),    // Acquire input size
                   (int) capture.get(CV_CAP_PROP_FRAME_HEIGHT));
@@ -60,17 +66,23 @@ int main(int argc, char *argv[])
             cout  << "Could not open the output video for write: " << source << endl;
             return -1;
         }
-
+        double frameDuration=1000.0/capture.get(CAP_PROP_FPS);
         Mat frame,frame1;
         cout << "Started writing" << endl;
+        then = cvGetTickCount(); 
         for(;;) //Show the image captured in the window and repeat
         {
-            capture >> frame;              // read
-            if (frame.empty()) break;         // check if at end
-            frame1 = frame.clone();
-            outputVideo << frame1;
-
-            if(showStream)imshow("Window",frame1);
+            now = cvGetTickCount(); 
+            elapsed_msec = (double)(now - then) / tickspermillisecond; 
+            if(elapsed_msec>frameDuration){
+                cout << elapsed_msec << endl;
+                then = cvGetTickCount(); 
+                capture >> frame;              // read
+                if (frame.empty()) break;         // check if at end
+                frame1 = frame.clone();
+                if(showStream)imshow("Window",frame1);
+                outputVideo << frame1;
+            }
             int c = waitKey(10);
             if( c == 27 || c == 'q' || c == 'Q' )break;
         }
